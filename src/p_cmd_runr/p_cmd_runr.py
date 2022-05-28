@@ -66,6 +66,8 @@ def move_to_tmp(nodes, func=None):
                 if (entry.name.startswith(node) or (node in entry.name)) and not entry.is_dir(follow_symlinks=False):
                     tomove.append(entry.name)
         entries.close()
+    if tomove and func:
+        print("File manipulation in progress...")
     for entryname in tomove:
         try:
             if func:
