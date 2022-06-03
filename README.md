@@ -1,7 +1,7 @@
 # Introduction
 
 The p_cmd_runner package was born from the need to run local commands (taken from local files) on any number of remote nodes accessible via SSH(/AMOS/MOSHELL).
-It is written in Python 3, and is based on the Paramiko package. It was an attempt to produce an alternative to Ansible, which I was not allowed to install.
+It is written in Python 3, and is based on the Paramiko package.
 
 ### To install the package:
 **python -m pip install p_cmd_runr**
