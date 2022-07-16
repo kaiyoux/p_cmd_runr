@@ -5,7 +5,7 @@ import getpass
 #import argparse as ap
 import functools
 import paramiko
-
+import re
 
 
 def get_nodes(jumpboxes):
@@ -259,7 +259,13 @@ def send_receive_cmd_blocking(channel, cmd, prompts="$#?<>", print_output=False)
         Blocking version of send_receive_cmd.
     Paramaters:
         - channel a Paramiko channel.
-        - cmd text to send.
+        - cmd text to send. cmd could be the special notation ":<number of seconds>:",
+        which introduces a pause of number of seconds. This allows to wait for 
+        the output of the previous command that has not yet been received,
+        despite the fact that a prompt was returned. Note that this special notation
+        must appear on a seperate line, in order to keep it distinct for your regular
+        commands. Any other command(s) that appear on the same line as this
+        special notation will be ignored.
         - print_output determines whether or not to print command output on the screen.
         - prompts string of characters representing command line prompts. the function will not return unless it detects one of the prompt characters in the end of the command output.
     Returns:
@@ -267,7 +273,13 @@ def send_receive_cmd_blocking(channel, cmd, prompts="$#?<>", print_output=False)
     """
     rcv = output = ""
     wait_time = 0.1
-    channel.send(cmd + "\n")
+    cp = re.compile(":(\d+)[sS]?:")
+    m = cp.search(cmd)
+    if m:
+        pause = int(m.group(1))
+        sleep(pause)
+    else:
+        channel.send(cmd + "\n")
 
     while not channel.exit_status_ready():
         sleep(wait_time)
@@ -299,14 +311,26 @@ def send_receive_cmd(channel, cmd, cmd_timeout=0.5, print_output=False):
         Send and receive through a channel.
     Paramaters:
         - channel a Paramiko channel.
-        - cmd text to send.
+        - cmd text to send. cmd could be the special notation ":<number of seconds>:",
+        which introduces a pause of number of seconds. This allows to wait for 
+        the output of the previous command that has not yet been received,
+        despite the fact that a prompt was returned. Note that this special notation
+        must appear on a seperate line, in order to keep it distinct for your regular
+        commands. Any other command(s) that appear on the same line as this
+        special notation will be ignored.
         - cmd_timeout maximum time to wait (in seconds) for command to return output.
         - print_output determines whether or not to print command output on the screen.
     Returns:
         Received text as a result of sent cmd.
     """
     rcv = ""
-    channel.send(cmd + "\n")
+    cp = re.compile(":(\d+)[sS]?:")
+    m = cp.search(cmd)
+    if m:
+        pause = int(m.group(1))
+        sleep(pause)
+    else:
+        channel.send(cmd + "\n")
     wait_time = 0.1
     elapsed = 0.0
     while True:

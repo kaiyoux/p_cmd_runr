@@ -87,7 +87,7 @@ if fp:
 ```
 
 
-For more information on other functions and class methods, load the package and use the Python help() function to inspect them, or check the source code.
+For more information on other functions and class methods, load the package and use the Python help() function to inspect them, or check the [source code](https://github.com/kaiyoux/p_cmd_runr).
 
 
 # How To Use The gp_cmd_runr Script 
@@ -260,6 +260,27 @@ prompts = <>
 end
 ```
 
+
+# Command File Special Notation:
+
+The command file(s) would contain the typical commands that you would run, line by line, while logged in on the remote host(s).
+As of **version 0.0.6**, a special notation 
+
+**:<number of seconds>:** 
+
+can be used in your command files.
+The purpose of this special notation is to wait for the output of the previous command that was issued, for which a prompt was returned but the expected output has yet to be received, as it is still being processed and will be returned in a few seconds or minutes.
+**Note that this special notation must appear on a seperate line, in order to keep it distinct from your regular commands. Any other command(s) that appear on the same line as this special notation will be ignored.**
+```
+Examples of valid notations:
+:2: (same as :2s: or :2S:) to wait for 2 seconds.
+:063: (same as :63: or :63s:) to wait for 63 seconds.
+
+Examples of non-valid notations:
+:: (same as :s: or :S:) will be ignored
+:5.9: will be ignored
+:1m5s: will be ignored, use :65: instead
+```
 
 # Limitations/Known Issues:
 

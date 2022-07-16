@@ -9,9 +9,9 @@ It is written in Python 3, and is based on the Paramiko package.
 
 ### The p_cmd_runr package provides access to:
 - an API composed of a ConfigGrabber class, a CmdRunner class, a main function called boxjumper, and other utility functions.
-- the gp_cmd_runr.py a general purpose command runner script.
+- the gp_cmd_runr a general purpose command runner script.
 
-Whether you will be implementing your own script with the help of the API, or running the gp_cmd_runr.py script, you will have to provide 2 types of files:
+Whether you will be implementing your own script with the help of the API, or running the gp_cmd_runr script, you will have to provide 2 types of files:
 - at least one configuration file stating which nodes to access, their login information, along with references to the files containing the commands to run on those nodes.
 - at least one command file containing the command you would normally run on the above node(s).
 
@@ -87,18 +87,18 @@ if fp:
 ```
 
 
-For more information on other functions and class methods, load the package and use the Python help() function to inspect them, or check the source code.
+For more information on other functions and class methods, load the package and use the Python help() function to inspect them, or check the [source code](https://github.com/kaiyoux/p_cmd_runr).
 
 
-# How To Use The gp_cmd_runr.py Script 
+# How To Use The gp_cmd_runr Script 
 
-The gp_cmd_runr.py script is a general purpose and flexible means of automatically running commands remotely on one or more service node(s) using SSH(/AMOS/MOSHELL).
+The gp_cmd_runr script is a general purpose and flexible means of automatically running commands remotely on one or more service node(s) using SSH(/AMOS/MOSHELL).
 It allows you to jump from node to node, with the option of running commands on each node.
 **PLEASE MAKE SURE THAT YOU MANUALLY TEST THE COMMANDS ON THE INTENDED NODE(S) BEFORE RUNNING THEM 
 AUTOMATICALLY WITH THIS SCRIPT.**
 
 
-The script is controlled by one or more configuration files. See Definitions and the example configuration files section below to have an idea on how to write your own configuration file(s).
+The script is controlled by one or more configuration files. See Definitions and the Example Configuration Files section below to have an idea on how to write your own configuration file(s).
 
 
 ### Prerequisite (skip this if the p_cmd_runr package install was successful):
@@ -120,7 +120,7 @@ or
 **python -m pip install -r requirements.txt**
 
 
-### To run the scrpit, type on the command line:
+### To run the scrpit:
 **python -m gp_cmd_runr [-h] [-d] [-t] [-p] [-r|-n|-f] [-c CONFIG1 [CONFIG2 ...] ]**
 ```
 general purpose command runner
@@ -193,7 +193,7 @@ end
 ]
 ```
 
-# Example Confiuration files
+# Example Confiuration Files
 ```
 # The below configuration will ssh to node 99.99.99.99, and from there ssh to node 88.88.88.88.
 # It will run the commands in linux_commands_2.txt on node 88.88.88.88, and save the output in EMM.txt under tmp/ folder.
@@ -261,10 +261,31 @@ end
 ```
 
 
+# Command File Special Notation:
+
+The command file(s) would contain the typical commands that you would run, line by line, while logged in on the remote host(s).
+As of **version 0.0.6**, a special notation 
+
+**:<number of seconds>:** 
+
+can be used in your command files.
+The purpose of this special notation is to wait for the output of the previous command that was issued, for which a prompt was returned but the expected output has yet to be received, as it is still being processed and will be returned in a few seconds or minutes.
+**Note that this special notation must appear on a seperate line, in order to keep it distinct from your regular commands. Any other command(s) that appear on the same line as this special notation will be ignored.**
+```
+Examples of valid notations:
+:2: (same as :2s: or :2S:) to wait for 2 seconds.
+:063: (same as :63: or :63s:) to wait for 63 seconds.
+
+Examples of non-valid notations:
+:: (same as :s: or :S:) will be ignored
+:5.9: will be ignored
+:1m5s: will be ignored, use :65: instead
+```
+
 # Limitations/Known Issues:
 
 Pagination type commands like `more` or `less` will lock after the first output. It is best to avoid such commands.
-You may try to run gp_cmd_runr.py with the -t or --timeout option. This will force the script to send the next command after the delay you specify, which may result in unexpected behavior on the remote node.
+You may try to run gp_cmd_runr with the -t or --timeout option. This will force the script to send the next command after the delay you specify, which may result in unexpected behavior on the remote node.
 
 
 Let me know if you have any questions: <kaiyoux@gmail.com>
