@@ -88,13 +88,13 @@ def count_from_end(s):
 
 
 
-def deflate(s1, s2):
+def deflate(s1, s2=""):
     """
     Description:
         Takes two strings and returns a concatenation of those strings such that there are no excessive "\n" characters between them.
         The result will be that there will be no duplication of "\n" characters between lines.
     """
-    if not s2.strip():
+    if s2 and not s2.strip():
         return s1 + "\n"
     count = count_from_end(s1)
     count = math.ceil(count / 2)
@@ -110,11 +110,15 @@ def deflate_file(filename):
     Parameters:
         - filename name of the file.
     """
-    with open(filename, mode="rt", encoding="utf-8") as fp:
-        lines = fp.readlines()
+    res = ""
+    with open(filename, mode="rt", encoding="utf-8") as rfp:
+        lines = rfp.readlines()
+##        try:
         res = functools.reduce(deflate, lines)
-    with open(filename, mode="wt", encoding="utf-8") as fp:
-        fp.write(res)
+##        except TypeError:
+##            pass
+    with open(filename, mode="wt", encoding="utf-8") as wfp:
+        wfp.write(res)
 
 
 

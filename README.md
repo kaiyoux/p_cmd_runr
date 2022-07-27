@@ -3,6 +3,10 @@
 The p_cmd_runner package was born from the need to run local commands (taken from local files) on any number of remote nodes accessible via SSH(/AMOS/MOSHELL).
 It is written in Python 3, and is based on the Paramiko package.
 
+As of **version 0.1.0**, SSH security key files are supported as an alternative to password authentication.
+See this [tutorial](https://phoenixnap.com/kb/setup-passwordless-ssh) on how to setup your SSH security key files.
+In general, you would generate public and private key-pair(s) on your local machine, then transfer the public key(s) to your remote node(s).
+
 ### To install the package:
 **python -m pip install p_cmd_runr**
 
@@ -13,7 +17,7 @@ It is written in Python 3, and is based on the Paramiko package.
 
 Whether you will be implementing your own script with the help of the API, or running the gp_cmd_runr script, you will have to provide 2 types of files:
 - at least one configuration file stating which nodes to access, their login information, along with references to the files containing the commands to run on those nodes.
-- at least one command file containing the command you would normally run on the above node(s).
+- at least one command file containing the commands you would normally run on the above node(s).
 
 
 # The Main API Classes And Functions
@@ -39,7 +43,7 @@ __init__(self, filename="config.txt", separator="=", comment="#", mvs=",", delay
 
 The **CmdRunner** class creates an object that logs into a node *jumpbox-style* and runs commands taken from cmd_file. It outputs the results in log_file.
 ```
-__init__(self, jumpbox, node, cmd_file, log_file, blocking)
+__init__(self, jumpbox, node, cmd_file, log_file, blocking, key_file=None)
         Description:
             Initializer of CmdRunner object.
         Parameters:
@@ -48,6 +52,7 @@ __init__(self, jumpbox, node, cmd_file, log_file, blocking)
             - cmd_file file containing the commands to execute on node.
             - log_file name of file in which activity is logged. If log_file is not given, a log file will be created.
             - blocking determines whether to block and wait for a command to finish executing.
+            - key_file optional SSH security key file.
         Returns:
             CmdRunner object.
 ```
@@ -131,7 +136,7 @@ optional arguments:
   -t, --timeout         sets command execution to non-blocking. default is blocking
   -p, --print_output    flag to print command output to the screen. default is not to print
   -r, --raw		no manipulation of output file(s)
-  -n, --normal		remove duplicate '\n' between lines in output file(s). this normal appearance is the default behavior
+  -n, --normal		remove duplicate '\n' between lines in output file(s). this "normal" appearance is the default behavior
   -f, --flatten		only have output file(s) containing a single '\n' between lines
   -c CONFIG1 [CONFIG2 ...], --config CONFIG1 [CONFIG2 ...]
                         list of one or many configuration files. default is config.txt
@@ -142,22 +147,30 @@ optional arguments:
 ```
 # This defines the structure of a configuration file.
 # # character is a comment
-# [] encloses an optional entry
+# [] encloses an optional entry or block of entries
+# <> value to specify. Note that terms file, filename and filepath within <> are synonymous
 
 [
-# optional jumpboxes. they can only be access through ssh
-# example: ssh [<username>@]<node>
+# optional jumpboxes. these are potentially intermediary nodes, and can only be accessed through ssh
+# example: ssh [-i key_file] [username@]node [-p port]
 # jumbox1
 jump_cmd = ssh
 node = <node>
 [username = <username>]  # will be prompted if not provided
-[password = <password>]  # will be prompted if not provided
+[
+[
+[key_file = <ssh security key file>]  # will not be prompted if not provided. this would usually be a private key file on your local machine
+[passphrase = <passphrase of key_file>]  # if your private key file was created with a passphrase for additional security, you will have to specify it here. Note that this entry is optional if you are not using a passphrase
+]
+# or
+[password = <password>]  # will be prompted if not provided. meaningless if key_file is provided
+]
 [port = <port number>]   # specify a custom ssh port number. default is 22
 [cmd_file = <filepath>]
 [log_file = <log filename>]
 [delay = <pause time before running next command>]  # defaults to 0 sec
 [cmd_timeout = <maximum time to wait for command execution>]  # maximum amount of time to wait (in seconds) for output from a command. it defaults to 0.5 sec. increase this value if you are missing some output. meaningless in blocking mode
-[prompts = <string of characters representing prompts on the node>]  # for blocking execution, the script blocks until it detects one of the prompts specified here. default is $#?<> . meaningless in non-blocking mode 
+[prompts = <string of characters representing prompts on the node>]  # for blocking execution, the script blocks until it detects one of the prompts specified here. default is $#?<> . meaningless in non-blocking mode
 end
 
 
@@ -171,24 +184,35 @@ end
 # and/or
 
 [
-# optional final node(s). these are similar nodes sharing the same login and understanding the same commands. can either be accessed through ssh or amos/moshell
-# the name of each log file will be a combination of its corresponding IP/node name with date and timestamp
-nodes = <comma seperated list of nodes (either names or IPs)>
+# optional final node(s). these are similar nodes sharing the same login username, the same password (if key files are not used), and understanding the same commands. can either be accessed through ssh or amos/moshell
+# the name of each log file will be a combination of its corresponding IP/node name with date and timestamp. 
+# Note that if there happens to be a local tmp/ folder, the script will silently move the logs files to that tmp/ folder as a measure to avoid cludder in the working directory
+nodes = <comma seperated list of nodes (either node names or IP addresses)>
 
-# command files
-# the first command file is run on the first node, the second on the second node, etc.
+[
+# optional ssh security key files for the above final nodes 
+# the first key file is for the secure login to the first node, the second key file to the second node, etc.
+# if there are more nodes than key files, the last key file will be used to login to the remaining nodes
+# if there are less nodes than key files, the excess key files are ignored
+# Note that individual passphrases are not allowed in this section for each final node
+key_files = <comma seperated list of ssh security key files>
+]
+
+# command files for the above final nodes
+# the first command file is run on the first node, the second command file on the second node, etc.
 # if there are more nodes than command files, the last command file will be run on the remaining nodes
-# if there are less nodes than command files, the excess command files are discarded
+# if there are less nodes than command files, the excess command files are ignored
 cmd_files = <comma seperated list of filepaths>
 
-# defines parameters for nodes
-jump_cmd  = <amos (node) or ssh  (username@node)>
-username = <username>  # mandatory if using ssh. my amos/moshell does not use username
-password = <password>  # mandatory if using ssh. my amos/moshell does not use password
+# defines common parameters for the final nodes
+jump_cmd  = amos or moshell or ssh  # examples: amos node or moshell node or ssh [-i key_file] [username@]node [-p port]
+[username = <username>]  # mandatory if using ssh. my amos/moshell does not use username
+[password = <password>]  # mandatory if using ssh and no key_files have been specified. this password will be used to login on all final nodes. meaningless if key_files are provided. my amos/moshell does not use password authentication
+[passphrase = <passphrase for one, some or all key_files>]  # you may define and use a common passphrase for one, all or some of the final nodes/key files. specifying a passcode here for some of the key files will not interfere with the other key files that do not require a passphrase
 [port = <port number>]   # specify a custom ssh port number. default is 22
 [delay = <pause time before running next command>]  # defaults to 0 sec
 [cmd_timeout = <maximum time to wait for command execution>]  # maximum amount of time to wait (in seconds) for output from a command. it defaults to 0.5 sec. increase this value if you are missing some output. meaningless in blocking mode
-[prompts = <string of characters representing prompts on the node>]  # for blocking execution, the script blocks until it detects one of the prompts specified here. default is $#?<> . meaningless in non-blocking mode 
+[prompts = <string of characters representing prompts on the nodes>]  # for blocking execution, the script blocks until it detects one of the prompts specified here. default is $#?<> . meaningless in non-blocking mode 
 end
 ]
 ```
@@ -211,24 +235,24 @@ end
 
 jump_cmd = ssh
 node = 88.88.88.88
-username = iT'sm3
-password = my5ecr3tCu8passw
-log_file = tmp/EMM.txt  # note: log file will be placed in tmp folder
+username = iTsm3
+password = my5ecr3t#Cu8#passw  # yes, you may use '#' characters as part of your password
+log_file = tmp/EMM.txt  # note: log file will be placed in tmp folder, if tmp/ exists
 cmd_file = linux_commands_2.txt
 cmd_timeout = 1
 end
 ```
 
 ```
-# The below configuration will ssh to 4 nodes: cube5, cube6, 3.3.3.3, cube1. Note that they must all use the same login credentials.
-# It will run the commands in linux2_commands.txt on all 4 cube nodes and save the output locally in text files named after each node with a date and timestamp.
+# The below configuration will ssh to 4 nodes: cube5, cube6, 3.3.3.3, cube1. Note that they must all accept the same login username and password credentials.
+# It will run the commands in linux2_commands on all 4 nodes and save the output locally in text files named after each node with a date and timestamp.
 
 nodes = cube5, cube6, 3.3.3.3, cube1
 
-cmd_files = linux2_commands.txt
+cmd_files = linux2_commands
 
 jump_cmd = ssh
-username = iT'sm3
+username = iTsm3
 password = my5ecr3tCu8passw
 #delay = 0
 #cmd_timeout = 1
@@ -244,7 +268,7 @@ end
 jump_cmd = ssh
 node = 1.2.3.4
 port = 22
-username = iT'sm3
+username = iTsm3
 password = my5ecr3tCu8passw
 prompts = $
 end
@@ -260,13 +284,103 @@ prompts = <>
 end
 ```
 
+```
+# The below configuration will ssh to cubeX node using the private key in C:/Users/jd/ssh-keys/id_rsa (which does not require a passphrase),
+# and execute the commands in C:/Users/jd/work/commands_to_run_on_cubeX.
+
+jump_cmd = ssh
+node = cubeX
+port = 2233
+username = jane-doe
+key_file = C:/Users/jd/ssh-keys/id_rsa  # was not generated with a passphrase
+#key_file = C:/Users/jd/ssh-keys/pp_id_dsa  # was generated with the below passphrase
+#passphrase = passphrase-for-pp_id_dsa
+prompts = $
+cmd_file = C:/Users/jd/work/commands_to_run_on_cubeX
+end
+```
+
+```
+# The below configuration will successively ssh to the 2 nodes (aServer and 721.9.0.5) using the private key in pp_id_ed25519, along with passphrase "common_pp*",
+# and execute the commands in cmd1 on aServer, and commands in cmd2 on 721.9.0.5.
+
+nodes = aServer, 721.9.0.5
+key_files = pp_id_ed25519
+cmd_files = cmd1, cmd2, cmd3, cmd4
+
+jump_cmd = ssh
+username = admin
+passphrase = common_pp*
+port = 2222
+prompts = $
+end
+```
+
+```
+# The below configuration will ssh to sales node using the private key in id_rsa and execute the commands in cmd1.txt.
+# Then ssh to dmz node using the private key in pp_id_rsa, along with its corresponding passphrase "the_passphrase_of_pp_id_rsa", and execute the commands in /home/billy/special/dmz/cmd2.
+# And finally, ssh to production node using the private key in id_ed25519, and execute the commands in cmd1.txt.
+
+nodes = sales, dmz, production
+
+key_files = id_rsa, pp_id_rsa, id_ed25519
+
+cmd_files = cmd1.txt, /home/billy/special/dmz/cmd2, cmd1.txt, cmd.txt
+
+jump_cmd = ssh
+username = admin
+passphrase = the_passphrase_of_pp_id_rsa
+port = 2222
+prompts = $
+end
+```
+
+```
+# The below configuration will ssh to node 99.99.99.99, and from there ssh to node 88.88.88.88.
+# From node 88.88.88.88, it will ssh to nodes cube5, cube6, 3.3.3.3, cube1.
+# It will run the commands in linux2_commands.txt on cube5, cube6, 3.3.3.3 and cube1, and save 
+# the output locally in text files named after each node with a date and timestamp.
+# It will backtrack and run the commands in linux_TEST_commands on node 88.88.88.88, and save the output in EMM.txt under tmp/ folder.
+# Once done, it will backtrack and run the commands in linux_cmds.txt on node 99.99.99.99, and save the output in cubevm.txt.
+
+jump_cmd = ssh
+node = 99.99.99.99
+username = 
+key_file = /home/john/.ssh/id_to_login_to_99-99-99-99
+cmd_timeout = 10.0
+#delay = 0
+log_file = cubevm.txt
+cmd_file = linux_cmds.txt
+end
+
+jump_cmd = ssh
+node = 88.88.88.88
+username = ITteam
+key_file = /home/john/.ssh/id_to_login_to_88-88-88-88
+log_file = tmp/EMM.txt  # note: log file EMM.txt as well as the logs from the below nodes will be placed in the tmp/ folder, if it exists 
+cmd_file = linux_TEST_commands
+cmd_timeout = 1
+end
+
+nodes = cube5, cube6, 3.3.3.3, cube1
+
+key_files = /home/john/.ssh/id_to_login_to_cube5, /home/john/.ssh/id_to_login_to_cube6, /home/john/.ssh/id_to_login_to_3-3-3-3_and_cube1
+
+cmd_files = linux2_commands.txt
+
+jump_cmd = ssh
+username = admin
+#delay = 0
+#cmd_timeout = 1
+end
+```
 
 # Command File Special Notation:
 
 The command file(s) would contain the typical commands that you would run, line by line, while logged in on the remote host(s).
 As of **version 0.0.6**, a special notation 
 
-**:<number of seconds>:** 
+**:<number of seconds>[sS]:** 
 
 can be used in your command files.
 The purpose of this special notation is to wait for the output of the previous command that was issued, for which a prompt was returned but the expected output has yet to be received, as it is still being processed and will be returned in a few seconds or minutes.
@@ -284,8 +398,12 @@ Examples of non-valid notations:
 
 # Limitations/Known Issues:
 
-Pagination type commands like `more` or `less` will lock after the first output. It is best to avoid such commands.
+- Pagination type commands like `more` or `less` will lock after the first output. It is best to avoid such commands.
 You may try to run gp_cmd_runr with the -t or --timeout option. This will force the script to send the next command after the delay you specify, which may result in unexpected behavior on the remote node.
+
+- Given that my AMOS/MOSHELL environments do not require login credentials, the script does not provide the option of specifying such login credentials for AMOS/MOSHELL access.
+
+
 
 
 Let me know if you have any questions: <kaiyoux@gmail.com>

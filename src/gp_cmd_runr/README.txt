@@ -53,9 +53,10 @@ optional arguments:
 
 Limitations/Knon Issues:
 
-Pagination type commands like 'more' or 'less' will lock after the first output. It is best to avoid such commands.
+- Pagination type commands like 'more' or 'less' will lock after the first output. It is best to avoid such commands.
 You may try to run gp_cmd_runr.py with the -t or --timeout option. This will force the script to send the next command after the delay you specify, which may result in unexpected behavior on the remote node.
 
+- Given that my AMOS/MOSHELL environments do not require login credentials, the script does not provide the option of specifying such login credentials for AMOS/MOSHELL access.
 
 
 Let me know if you have any questions: kaiyoux@gmail.com

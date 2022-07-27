@@ -8,7 +8,8 @@ To use the script, you can either:
   It will then query the MSC(s) using the commands from defs_to_query.txt and generate a temporary file containing the ANBSP printouts. 
   After checking for overlaps in that temporary file, it will attemp to move the tempory files to the tmp folder.
 
-The script's overlap detection logic is based on a single rule, as per my current understanding... 
+The script's overlap detection logic is based on a single rule, as per my current understanding...
+Note that no overlaps due to End Of Selection (EOS) cases will be detected, if present.
 Let me know if there are any special cases that need to be incorporated.
 
 Edit the config.txt configuration file by entering your username and password for your OSSUMTS 
