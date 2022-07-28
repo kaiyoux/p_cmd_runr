@@ -148,7 +148,7 @@ optional arguments:
 # This defines the structure of a configuration file.
 # # character is a comment
 # [] encloses an optional entry or block of entries
-# <> value to specify. Note that terms file, filename and filepath within <> are synonymous
+# <> value to specify. Note that the terms file, filename and filepath within <> are synonymous
 
 [
 # optional jumpboxes. these are potentially intermediary nodes, and can only be accessed through ssh

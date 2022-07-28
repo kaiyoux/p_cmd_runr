@@ -27,6 +27,7 @@ def flatten_file(filename):
     Parameters:
         - filename name of the file.
     """
+    lines = []
     with open(filename, mode="rt", encoding="utf-8") as fp:
         lines = fp.readlines()
         lines = flatten(lines)
@@ -36,7 +37,7 @@ def flatten_file(filename):
 
 
 
-def squeeze(s1, s2):
+def squeeze(s1, s2=""):
     """
     Description:
         Takes two strings and returns a concatenation of those strings such that there are no consecutive "\n" characters between them.
@@ -64,9 +65,13 @@ def squeeze_file(filename):
     Parameters:
         - filename name of the file.
     """
+    res = ""
     with open(filename, mode="rt", encoding="utf-8") as fp:
         lines = fp.readlines()
-        res = functools.reduce(squeeze, lines)
+        try:
+            res = functools.reduce(squeeze, lines)
+        except TypeError:
+            pass
     with open(filename, mode="wt", encoding="utf-8") as fp:
         fp.write(res)
 
@@ -94,7 +99,7 @@ def deflate(s1, s2=""):
         Takes two strings and returns a concatenation of those strings such that there are no excessive "\n" characters between them.
         The result will be that there will be no duplication of "\n" characters between lines.
     """
-    if s2 and not s2.strip():
+    if not s2.strip():
         return s1 + "\n"
     count = count_from_end(s1)
     count = math.ceil(count / 2)
@@ -111,24 +116,26 @@ def deflate_file(filename):
         - filename name of the file.
     """
     res = ""
-    with open(filename, mode="rt", encoding="utf-8") as rfp:
-        lines = rfp.readlines()
-##        try:
-        res = functools.reduce(deflate, lines)
-##        except TypeError:
-##            pass
-    with open(filename, mode="wt", encoding="utf-8") as wfp:
-        wfp.write(res)
+    with open(filename, mode="rt", encoding="utf-8") as fp:
+        lines = fp.readlines()
+        try:
+            res = functools.reduce(deflate, lines)
+        except TypeError:
+            pass
+    with open(filename, mode="wt", encoding="utf-8") as fp:
+        fp.write(res)
 
 
 
 if __name__ == "__main__":
     del sys.argv[0]
-    op = sys.argv.pop(0).lower()
-    print(op)
-    if "f" in op:
+    op = ""
+    if "-" in sys.argv[0]:
+        op = sys.argv.pop(0).lower()
+        print(op)
+    if "-f" in op:
         func = flatten_file
-    elif "d" in op:
+    elif "-d" in op:
         func = deflate_file
     else:
         func = squeeze_file
