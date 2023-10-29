@@ -29,8 +29,11 @@ def flatten_file(filename):
     """
     lines = []
     with open(filename, mode="rt", encoding="utf-8") as fp:
-        lines = fp.readlines()
-        lines = flatten(lines)
+        try:
+            lines = fp.readlines()
+            lines = flatten(lines)
+        except:
+            pass
     with open(filename, mode="wt", encoding="utf-8") as fp:
         for l in lines:
             fp.write(l)
@@ -67,10 +70,10 @@ def squeeze_file(filename):
     """
     res = ""
     with open(filename, mode="rt", encoding="utf-8") as fp:
-        lines = fp.readlines()
         try:
+            lines = fp.readlines()
             res = functools.reduce(squeeze, lines)
-        except TypeError:
+        except:
             pass
     with open(filename, mode="wt", encoding="utf-8") as fp:
         fp.write(res)
@@ -117,10 +120,10 @@ def deflate_file(filename):
     """
     res = ""
     with open(filename, mode="rt", encoding="utf-8") as fp:
-        lines = fp.readlines()
         try:
+            lines = fp.readlines()
             res = functools.reduce(deflate, lines)
-        except TypeError:
+        except:
             pass
     with open(filename, mode="wt", encoding="utf-8") as fp:
         fp.write(res)
