@@ -11,9 +11,9 @@ In general, you would generate public and private key-pair(s) on your local
 machine, then transfer the public key(s) to your remote node(s).
 
 ### To install the package:
-**python -m pip install p_cmd_runr
+**python -m pip install p_cmd_runr**
 or
-python3 -m pip install --user p_cmd_runr**
+**python3 -m pip install --user p_cmd_runr**
 
 
 ### The p_cmd_runr package provides access to:
